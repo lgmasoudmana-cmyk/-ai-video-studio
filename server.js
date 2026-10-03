@@ -1543,10 +1543,9 @@ app.post(
 ==========================================
 START SERVER
 ==========================================
-*/
-
 app.listen(
   port,
+  "0.0.0.0",
   () => {
 
     console.log(
@@ -1558,8 +1557,12 @@ app.listen(
     );
 
     console.log(
-      "Server running on port:",
+      "Running on port:",
       port
+    );
+
+    console.log(
+      "Host: 0.0.0.0"
     );
 
     console.log(
