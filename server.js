@@ -3,23 +3,23 @@ import express from "express";
 import multer from "multer";
 import RunwayML, {
   TaskFailedError,
-  APIStatusError
+  APIStatusError,
+  toFile
 } from "@runwayml/sdk";
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 /*
-  ==========================================
-  Upload configuration
-  ==========================================
+==========================================
+UPLOAD CONFIGURATION
+==========================================
 */
 
 const upload = multer({
   storage: multer.memoryStorage(),
 
   limits: {
-    // Runway image input: max 5 MB
     fileSize: 5 * 1024 * 1024
   },
 
@@ -43,14 +43,14 @@ const upload = multer({
 });
 
 /*
-  ==========================================
-  Runway client
-  ==========================================
+==========================================
+RUNWAY CLIENT
+==========================================
 */
 
 if (!process.env.RUNWAYML_API_SECRET) {
   console.warn(
-    "⚠️ RUNWAYML_API_SECRET در Environment Variables تنظیم نشده است."
+    "⚠️ RUNWAYML_API_SECRET تنظیم نشده است."
   );
 }
 
@@ -65,9 +65,9 @@ app.use(
 );
 
 /*
-  ==========================================
-  HTML
-  ==========================================
+==========================================
+HTML
+==========================================
 */
 
 const INDEX_HTML = `
@@ -94,6 +94,7 @@ const INDEX_HTML = `
 
 body {
   margin: 0;
+
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -106,31 +107,53 @@ body {
 
 .container {
   width: min(900px, 94%);
+
   margin: auto;
-  padding: 24px 0 60px;
+
+  padding:
+    24px
+    0
+    60px;
 }
 
 h1 {
   font-size: 32px;
-  margin: 0 0 8px;
+
+  margin:
+    0
+    0
+    8px;
 }
 
 .subtitle {
   color: #9aa4b2;
+
   margin-bottom: 25px;
 }
 
 .card {
   background: #121820;
-  border: 1px solid #273241;
+
+  border:
+    1px
+    solid
+    #273241;
+
   border-radius: 18px;
+
   padding: 20px;
 }
 
 label {
   display: block;
-  margin: 18px 0 8px;
+
+  margin:
+    18px
+    0
+    8px;
+
   color: #cbd5e1;
+
   font-weight: 600;
 }
 
@@ -140,9 +163,14 @@ input {
   width: 100%;
 
   background: #0b1016;
+
   color: white;
 
-  border: 1px solid #344153;
+  border:
+    1px
+    solid
+    #344153;
+
   border-radius: 12px;
 
   padding: 14px;
@@ -152,7 +180,10 @@ input {
 
 textarea {
   min-height: 170px;
+
   resize: vertical;
+
+  line-height: 1.8;
 }
 
 input[type="file"] {
@@ -163,6 +194,7 @@ button {
   width: 100%;
 
   border: 0;
+
   border-radius: 14px;
 
   padding: 17px;
@@ -170,9 +202,11 @@ button {
   margin-top: 20px;
 
   font-size: 18px;
+
   font-weight: 700;
 
   background: #2563eb;
+
   color: white;
 
   cursor: pointer;
@@ -180,6 +214,7 @@ button {
 
 button:disabled {
   opacity: .5;
+
   cursor: not-allowed;
 }
 
@@ -209,11 +244,15 @@ button:disabled {
 
 #progressBar {
   width: 0%;
+
   height: 100%;
 
   background: #2563eb;
 
-  transition: width .4s ease;
+  transition:
+    width
+    .4s
+    ease;
 }
 
 video {
@@ -246,10 +285,6 @@ video {
   font-weight: bold;
 }
 
-.hidden {
-  display: none;
-}
-
 .info {
   margin-top: 10px;
 
@@ -268,6 +303,27 @@ video {
   color: #86efac !important;
 }
 
+.warning {
+  color: #fde68a !important;
+}
+
+.hidden {
+  display: none;
+}
+
+hr {
+  border: 0;
+
+  border-top:
+    1px
+    solid
+    #273241;
+
+  margin:
+    25px
+    0;
+}
+
 </style>
 
 </head>
@@ -276,140 +332,150 @@ video {
 
 <div class="container">
 
-  <h1>🎬 AI Video Studio</h1>
+<h1>
+🎬 AI Video Studio
+</h1>
 
-  <div class="subtitle">
-    ساخت ویدئو با هوش مصنوعی
-  </div>
+<div class="subtitle">
+ساخت ویدئو با هوش مصنوعی
+</div>
 
-  <div class="card">
+<div class="card">
 
-    <label>
-      پرامپت ویدئو
-    </label>
+<label>
+پرامپت ویدئو
+</label>
 
-    <textarea
-      id="prompt"
-      placeholder="مثلاً: یک نمای سینمایی و واقع‌گرایانه از یک خانه لوکس در تهران، نور گرم و طبیعی، حرکت بسیار نرم دوربین، عمق میدان سینمایی..."
-    ></textarea>
+<textarea
+  id="prompt"
+  placeholder="مثلاً: نمای سینمایی و واقع‌گرایانه از یک خانه لوکس در تهران، نور گرم طبیعی، حرکت آرام دوربین..."
+></textarea>
 
-
-    <label>
-      مدل
-    </label>
-
-    <select id="model">
-
-      <option value="gen4.5">
-        Runway Gen-4.5
-      </option>
-
-      <option value="gen4_turbo">
-        Runway Gen-4 Turbo
-      </option>
-
-    </select>
+<div class="info">
+پرامپت را دقیق و توصیفی بنویس.
+</div>
 
 
-    <label>
-      مدت ویدئو
-    </label>
+<label>
+مدل
+</label>
 
-    <select id="duration">
+<select id="model">
 
-      <option value="5">
-        5 ثانیه
-      </option>
+<option value="gen4.5">
+Runway Gen-4.5
+</option>
 
-      <option value="10">
-        10 ثانیه
-      </option>
+<option value="gen4_turbo">
+Runway Gen-4 Turbo
+</option>
 
-    </select>
-
-
-    <label>
-      نسبت تصویر
-    </label>
-
-    <select id="ratio">
-
-      <option value="1280:720">
-        16:9 افقی
-      </option>
-
-      <option value="720:1280">
-        9:16 عمودی
-      </option>
-
-      <option value="960:960">
-        1:1 مربعی
-      </option>
-
-      <option value="1104:832">
-        4:3 افقی
-      </option>
-
-      <option value="832:1104">
-        3:4 عمودی
-      </option>
-
-      <option value="1584:672">
-        21:9 سینمایی
-      </option>
-
-    </select>
+</select>
 
 
-    <label>
-      تصویر مرجع — اختیاری
-    </label>
+<label>
+مدت ویدئو
+</label>
 
-    <input
-      id="image"
-      type="file"
-      accept="image/png,image/jpeg,image/webp"
-    />
+<select id="duration">
 
-    <div class="info">
-      حداکثر حجم تصویر: ۵ مگابایت
-    </div>
+<option value="5">
+5 ثانیه
+</option>
 
+<option value="10">
+10 ثانیه
+</option>
 
-    <button id="generate">
-      🎥 ساخت ویدئو
-    </button>
+</select>
 
 
-    <div id="progress">
-      <div id="progressBar"></div>
-    </div>
+<label>
+نسبت تصویر
+</label>
+
+<select id="ratio">
+
+<option value="1280:720">
+16:9 افقی
+</option>
+
+<option value="720:1280">
+9:16 عمودی
+</option>
+
+<option value="960:960">
+1:1 مربعی
+</option>
+
+<option value="1104:832">
+4:3 افقی
+</option>
+
+<option value="832:1104">
+3:4 عمودی
+</option>
+
+<option value="1584:672">
+21:9 سینمایی
+</option>
+
+</select>
 
 
-    <div id="status"></div>
+<label>
+تصویر مرجع — اختیاری
+</label>
+
+<input
+  id="image"
+  type="file"
+  accept="image/png,image/jpeg,image/webp"
+>
+
+<div class="info">
+PNG، JPG یا WEBP — حداکثر ۵ مگابایت
+</div>
 
 
-    <div id="result" class="hidden">
+<button id="generate">
+🎥 ساخت ویدئو
+</button>
 
-      <video
-        id="video"
-        controls
-        playsinline
-      ></video>
 
-      <a
-        id="download"
-        class="download"
-        target="_blank"
-        rel="noopener"
-        download
-      >
-        ⬇️ دریافت ویدئو
-      </a>
+<div id="progress">
 
-    </div>
+<div id="progressBar"></div>
 
-  </div>
+</div>
+
+
+<div id="status"></div>
+
+
+<div id="result" class="hidden">
+
+<hr>
+
+<video
+  id="video"
+  controls
+  playsinline
+></video>
+
+<a
+  id="download"
+  class="download"
+  target="_blank"
+  rel="noopener"
+  download
+>
+⬇️ دریافت ویدئو
+</a>
+
+</div>
+
+</div>
 
 </div>
 
@@ -437,25 +503,132 @@ const progress =
 const progressBar =
   document.getElementById("progressBar");
 
+const modelSelect =
+  document.getElementById("model");
 
-function setStatus(message, type = "") {
+const ratioSelect =
+  document.getElementById("ratio");
 
-  statusBox.textContent = message;
 
-  statusBox.className = type;
+function setStatus(
+  message,
+  type = ""
+) {
+
+  statusBox.textContent =
+    message;
+
+  statusBox.className =
+    type;
 
 }
 
 
 function setProgress(value) {
 
-  progress.style.display = "block";
+  progress.style.display =
+    "block";
 
   progressBar.style.width =
     value + "%";
 
 }
 
+
+/*
+==========================================
+MODEL / RATIO UI
+==========================================
+*/
+
+function updateRatios() {
+
+  const model =
+    modelSelect.value;
+
+  const hasImage =
+    document
+      .getElementById("image")
+      .files.length > 0;
+
+  const options =
+    Array.from(
+      ratioSelect.options
+    );
+
+  /*
+    Gen-4.5 text-to-video only
+    supports 16:9 and 9:16.
+  */
+
+  if (
+    model === "gen4.5" &&
+    !hasImage
+  ) {
+
+    options.forEach(
+      option => {
+
+        const allowed =
+          [
+            "1280:720",
+            "720:1280"
+          ].includes(
+            option.value
+          );
+
+        option.disabled =
+          !allowed;
+
+      }
+    );
+
+    ratioSelect.value =
+      "1280:720";
+
+  } else {
+
+    /*
+      Image-to-video supports
+      the additional ratios.
+    */
+
+    options.forEach(
+      option => {
+
+        option.disabled =
+          false;
+
+      }
+    );
+
+  }
+
+}
+
+
+modelSelect.addEventListener(
+  "change",
+  updateRatios
+);
+
+
+document
+  .getElementById("image")
+  .addEventListener(
+    "change",
+    updateRatios
+  );
+
+
+updateRatios();
+
+
+/*
+==========================================
+GENERATE
+==========================================
+*/
 
 button.addEventListener(
   "click",
@@ -468,28 +641,28 @@ button.addEventListener(
         .trim();
 
     const model =
-      document.getElementById("model")
-        .value;
+      modelSelect.value;
 
     const duration =
       Number(
-        document.getElementById("duration")
+        document
+          .getElementById("duration")
           .value
       );
 
     const ratio =
-      document.getElementById("ratio")
-        .value;
+      ratioSelect.value;
 
     const imageInput =
-      document.getElementById("image");
+      document
+        .getElementById("image");
 
     const image =
       imageInput.files[0];
 
 
     /*
-      Validate prompt
+      Prompt validation
     */
 
     if (!prompt) {
@@ -503,10 +676,6 @@ button.addEventListener(
     }
 
 
-    /*
-      Validate prompt length
-    */
-
     if (prompt.length > 1000) {
 
       setStatus(
@@ -519,12 +688,13 @@ button.addEventListener(
 
 
     /*
-      Validate image size
+      Image validation
     */
 
     if (
       image &&
-      image.size > 5 * 1024 * 1024
+      image.size >
+      5 * 1024 * 1024
     ) {
 
       setStatus(
@@ -537,7 +707,7 @@ button.addEventListener(
 
 
     /*
-      Gen-4 Turbo needs an image.
+      Gen-4 Turbo requires image
     */
 
     if (
@@ -546,7 +716,7 @@ button.addEventListener(
     ) {
 
       setStatus(
-        "❌ برای Runway Gen-4 Turbo باید تصویر مرجع انتخاب کنی.",
+        "❌ برای Gen-4 Turbo باید تصویر مرجع انتخاب کنی.",
         "error"
       );
 
@@ -554,14 +724,18 @@ button.addEventListener(
     }
 
 
-    button.disabled = true;
+    button.disabled =
+      true;
 
-    result.classList.add("hidden");
+    result.classList.add(
+      "hidden"
+    );
+
 
     setProgress(10);
 
     setStatus(
-      "⏳ در حال ارسال درخواست به Runway..."
+      "⏳ در حال ارسال درخواست..."
     );
 
 
@@ -605,7 +779,11 @@ button.addEventListener(
       }
 
 
-      setProgress(25);
+      setProgress(20);
+
+      setStatus(
+        "📤 در حال ارسال اطلاعات به سرور..."
+      );
 
 
       const response =
@@ -618,18 +796,30 @@ button.addEventListener(
         );
 
 
-      setProgress(80);
+      setProgress(85);
 
 
-      const data =
-        await response.json();
+      let data;
+
+      try {
+
+        data =
+          await response.json();
+
+      } catch {
+
+        throw new Error(
+          "پاسخ معتبر از سرور دریافت نشد."
+        );
+
+      }
 
 
       if (!response.ok) {
 
         throw new Error(
           data.error ||
-          "خطا در ساخت ویدئو"
+          "ساخت ویدئو ناموفق بود."
         );
 
       }
@@ -644,10 +834,12 @@ button.addEventListener(
       }
 
 
-      setProgress(100);
+      /*
+        Show video
+      */
 
-
-      video.src = data.url;
+      video.src =
+        data.url;
 
       download.href =
         data.url;
@@ -656,6 +848,9 @@ button.addEventListener(
       result.classList.remove(
         "hidden"
       );
+
+
+      setProgress(100);
 
 
       setStatus(
@@ -687,7 +882,8 @@ button.addEventListener(
 
     } finally {
 
-      button.disabled = false;
+      button.disabled =
+        false;
 
     }
 
@@ -703,9 +899,9 @@ button.addEventListener(
 
 
 /*
-  ==========================================
-  Home
-  ==========================================
+==========================================
+HOME
+==========================================
 */
 
 app.get(
@@ -721,13 +917,14 @@ app.get(
 
 
 /*
-  ==========================================
-  Generate Video
-  ==========================================
+==========================================
+GENERATE VIDEO API
+==========================================
 */
 
 app.post(
   "/api/generate",
+
   upload.single("image"),
 
   async (req, res) => {
@@ -735,21 +932,29 @@ app.post(
     try {
 
       /*
-        Check API key
+      ------------------------------------
+      API KEY
+      ------------------------------------
       */
 
-      if (!process.env.RUNWAYML_API_SECRET) {
+      if (
+        !process.env.RUNWAYML_API_SECRET
+      ) {
 
         return res.status(500).json({
+
           error:
-            "کلید RUNWAYML_API_SECRET در تنظیمات سرور وارد نشده است."
+            "کلید RUNWAYML_API_SECRET در Environment Variables تنظیم نشده است."
+
         });
 
       }
 
 
       /*
-        Read form
+      ------------------------------------
+      READ INPUT
+      ------------------------------------
       */
 
       const prompt =
@@ -758,44 +963,60 @@ app.post(
         ).trim();
 
       const model =
-        req.body.model || "gen4.5";
+        String(
+          req.body.model ||
+          "gen4.5"
+        );
 
       const duration =
         Number(
-          req.body.duration || 5
+          req.body.duration ||
+          5
         );
 
       const ratio =
-        req.body.ratio ||
-        "1280:720";
+        String(
+          req.body.ratio ||
+          "1280:720"
+        );
 
 
       /*
-        Validate prompt
+      ------------------------------------
+      PROMPT VALIDATION
+      ------------------------------------
       */
 
       if (!prompt) {
 
         return res.status(400).json({
+
           error:
             "پرامپت وارد نشده است."
+
         });
 
       }
 
 
-      if (prompt.length > 1000) {
+      if (
+        prompt.length > 1000
+      ) {
 
         return res.status(400).json({
+
           error:
             "پرامپت نباید بیشتر از ۱۰۰۰ کاراکتر باشد."
+
         });
 
       }
 
 
       /*
-        Validate model
+      ------------------------------------
+      MODEL VALIDATION
+      ------------------------------------
       */
 
       const allowedModels = [
@@ -803,41 +1024,89 @@ app.post(
         "gen4_turbo"
       ];
 
+
       if (
-        !allowedModels.includes(model)
+        !allowedModels.includes(
+          model
+        )
       ) {
 
         return res.status(400).json({
+
           error:
             "مدل انتخاب‌شده معتبر نیست."
+
         });
 
       }
 
 
       /*
-        Validate duration
+      ------------------------------------
+      DURATION
+      ------------------------------------
       */
 
       if (
-        !Number.isInteger(duration) ||
+        !Number.isInteger(
+          duration
+        ) ||
         duration < 2 ||
         duration > 10
       ) {
 
         return res.status(400).json({
+
           error:
             "مدت ویدئو باید بین ۲ تا ۱۰ ثانیه باشد."
+
         });
 
       }
 
 
       /*
-        Validate ratio
+      ------------------------------------
+      IMAGE
+      ------------------------------------
       */
 
-      const allowedRatios = [
+      const hasImage =
+        Boolean(req.file);
+
+
+      /*
+      Gen-4 Turbo requires image
+      */
+
+      if (
+        model === "gen4_turbo" &&
+        !hasImage
+      ) {
+
+        return res.status(400).json({
+
+          error:
+            "برای Runway Gen-4 Turbo باید تصویر مرجع انتخاب شود."
+
+        });
+
+      }
+
+
+      /*
+      ------------------------------------
+      RATIO VALIDATION
+      ------------------------------------
+      */
+
+      const gen45TextRatios = [
+        "1280:720",
+        "720:1280"
+      ];
+
+
+      const gen45ImageRatios = [
         "1280:720",
         "720:1280",
         "960:960",
@@ -846,106 +1115,91 @@ app.post(
         "1584:672"
       ];
 
+
+      const turboRatios = [
+        "1280:720",
+        "720:1280",
+        "960:960",
+        "1104:832",
+        "832:1104",
+        "1584:672"
+      ];
+
+
       if (
-        !allowedRatios.includes(ratio)
+        model === "gen4.5"
       ) {
 
-        return res.status(400).json({
-          error:
-            "نسبت تصویر انتخاب‌شده برای Runway معتبر نیست."
-        });
+        if (
+          hasImage
+        ) {
+
+          if (
+            !gen45ImageRatios.includes(
+              ratio
+            )
+          ) {
+
+            return res.status(400).json({
+
+              error:
+                "نسبت تصویر برای Gen-4.5 Image-to-Video معتبر نیست."
+
+            });
+
+          }
+
+        } else {
+
+          if (
+            !gen45TextRatios.includes(
+              ratio
+            )
+          ) {
+
+            return res.status(400).json({
+
+              error:
+                "برای Gen-4.5 بدون تصویر فقط 16:9 یا 9:16 انتخاب کن."
+
+            });
+
+          }
+
+        }
 
       }
 
-
-      /*
-        Gen-4 Turbo requires an image.
-      */
 
       if (
         model === "gen4_turbo" &&
-        !req.file
+        !turboRatios.includes(
+          ratio
+        )
       ) {
 
         return res.status(400).json({
+
           error:
-            "برای Gen-4 Turbo باید تصویر مرجع انتخاب شود."
+            "نسبت تصویر انتخاب‌شده برای Gen-4 Turbo معتبر نیست."
+
         });
 
       }
 
 
       /*
-        Build image data URI
-      */
-
-      let promptImage = undefined;
-
-
-      if (req.file) {
-
-        const mime =
-          req.file.mimetype;
-
-
-        const allowedImageTypes = [
-          "image/png",
-          "image/jpeg",
-          "image/webp"
-        ];
-
-
-        if (
-          !allowedImageTypes.includes(
-            mime
-          )
-        ) {
-
-          return res.status(400).json({
-            error:
-              "فرمت تصویر پشتیبانی نمی‌شود. PNG، JPG یا WEBP انتخاب کن."
-          });
-
-        }
-
-
-        if (
-          req.file.size >
-          5 * 1024 * 1024
-        ) {
-
-          return res.status(400).json({
-            error:
-              "حجم تصویر بیشتر از ۵ مگابایت است."
-          });
-
-        }
-
-
-        const base64 =
-          req.file.buffer.toString(
-            "base64"
-          );
-
-
-        promptImage =
-          "data:" +
-          mime +
-          ";base64," +
-          base64;
-
-      }
-
-
-      /*
-        Build Runway request
+      ------------------------------------
+      CREATE RUNWAY REQUEST
+      ------------------------------------
       */
 
       const request = {
 
         model,
 
-        promptText: prompt,
+        promptText:
+          prompt,
 
         ratio,
 
@@ -955,24 +1209,75 @@ app.post(
 
 
       /*
-        Only add promptImage when
-        an image actually exists.
+      ------------------------------------
+      UPLOAD IMAGE TO RUNWAY
+      ------------------------------------
       */
 
-      if (promptImage) {
+      if (req.file) {
+
+        console.log(
+          "Uploading image to Runway..."
+        );
+
+
+        const filename =
+          req.file.originalname ||
+          "reference-image.png";
+
+
+        const runwayFile =
+          await client.uploads
+            .createEphemeral(
+
+              toFile(
+                req.file.buffer,
+                filename,
+                {
+                  type:
+                    req.file.mimetype
+                }
+              )
+
+            );
+
+
+        if (
+          !runwayFile ||
+          !runwayFile.uri
+        ) {
+
+          throw new Error(
+            "تصویر به Runway آپلود شد اما URI دریافت نشد."
+          );
+
+        }
+
+
+        console.log(
+          "Runway image URI:",
+          runwayFile.uri
+        );
+
 
         request.promptImage =
-          promptImage;
+          runwayFile.uri;
 
       }
 
+
+      /*
+      ------------------------------------
+      LOG
+      ------------------------------------
+      */
 
       console.log(
         "================================"
       );
 
       console.log(
-        "Starting Runway generation..."
+        "STARTING RUNWAY GENERATION"
       );
 
       console.log(
@@ -992,7 +1297,7 @@ app.post(
 
       console.log(
         "Has image:",
-        Boolean(promptImage)
+        hasImage
       );
 
       console.log(
@@ -1001,22 +1306,40 @@ app.post(
 
 
       /*
-        Start generation and wait
+      ------------------------------------
+      CREATE TASK
+      ------------------------------------
       */
 
       const task =
         await client.imageToVideo
-          .create(request)
+          .create(
+            request
+          )
           .waitForTaskOutput();
 
 
       console.log(
-        "Runway task completed."
+        "================================"
+      );
+
+      console.log(
+        "RUNWAY TASK COMPLETED"
+      );
+
+      console.log(
+        task
+      );
+
+      console.log(
+        "================================"
       );
 
 
       /*
-        Get output URL
+      ------------------------------------
+      GET OUTPUT
+      ------------------------------------
       */
 
       const output =
@@ -1026,9 +1349,10 @@ app.post(
       if (!output) {
 
         console.error(
-          "Runway response:",
+          "Runway task response:",
           task
         );
+
 
         throw new Error(
           "Runway ویدئو را ساخت اما لینک خروجی دریافت نشد."
@@ -1038,14 +1362,18 @@ app.post(
 
 
       /*
-        Send URL to browser
+      ------------------------------------
+      RETURN VIDEO URL
+      ------------------------------------
       */
 
       return res.json({
 
-        success: true,
+        success:
+          true,
 
-        url: output
+        url:
+          output
 
       });
 
@@ -1057,10 +1385,12 @@ app.post(
       );
 
       console.error(
-        "RUNWAY ERROR:"
+        "RUNWAY ERROR"
       );
 
-      console.error(error);
+      console.error(
+        error
+      );
 
       console.error(
         "================================"
@@ -1068,7 +1398,9 @@ app.post(
 
 
       /*
-        Runway task failed
+      ------------------------------------
+      TASK FAILED
+      ------------------------------------
       */
 
       if (
@@ -1084,7 +1416,10 @@ app.post(
         return res.status(500).json({
 
           error:
-            error.taskDetails?.failureReason ||
+            error.taskDetails
+              ?.failureReason ||
+            error.taskDetails
+              ?.failureCode ||
             "ساخت ویدئو در Runway ناموفق بود."
 
         });
@@ -1093,7 +1428,9 @@ app.post(
 
 
       /*
-        Runway API error
+      ------------------------------------
+      API ERROR
+      ------------------------------------
       */
 
       if (
@@ -1120,14 +1457,16 @@ app.post(
 
 
         return res.status(
-          error.status || 500
+          error.status ||
+          500
         ).json({
 
           error:
             "Runway خطا برگرداند." +
             (
               details
-                ? "\\n\\n" + details
+                ? "\\n\\n" +
+                  details
                 : ""
             )
 
@@ -1137,7 +1476,9 @@ app.post(
 
 
       /*
-        Multer / upload error
+      ------------------------------------
+      MULTER FILE SIZE
+      ------------------------------------
       */
 
       if (
@@ -1156,7 +1497,32 @@ app.post(
 
 
       /*
-        Other error
+      ------------------------------------
+      MULTER FILE TYPE
+      ------------------------------------
+      */
+
+      if (
+        error?.message &&
+        error.message.includes(
+          "فرمت تصویر"
+        )
+      ) {
+
+        return res.status(400).json({
+
+          error:
+            error.message
+
+        });
+
+      }
+
+
+      /*
+      ------------------------------------
+      UNKNOWN ERROR
+      ------------------------------------
       */
 
       return res.status(500).json({
@@ -1174,9 +1540,9 @@ app.post(
 
 
 /*
-  ==========================================
-  Start server
-  ==========================================
+==========================================
+START SERVER
+==========================================
 */
 
 app.listen(
@@ -1192,7 +1558,7 @@ app.listen(
     );
 
     console.log(
-      "Running on port:",
+      "Server running on port:",
       port
     );
 
