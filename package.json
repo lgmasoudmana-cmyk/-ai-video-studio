@@ -1,18 +1,14 @@
 {
-  "name": "ai-video-studio-v2",
-  "version": "2.0.0",
-  "private": true,
+  "name": "ai-video-studio",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "@runwayml/sdk": "latest",
-    "dotenv": "latest",
-    "express": "latest",
-    "ffmpeg-static": "latest",
-    "multer": "latest",
-    "uuid": "latest"
+    "@runwayml/sdk": "^4.20.0",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "multer": "^2.0.2"
   }
 }
